@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
@@ -25,6 +27,9 @@ const morganConfig = (tokens, request, response) => {
   return morganConfigArray.join(' ')
 }
 app.use(morgan(morganConfig))
+
+// Database
+const Person = require('./models/person')
 
 // Data
 let persons = [
@@ -62,7 +67,12 @@ app.get('/info', (request, response) => {
 
 // Get all persons
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  //response.json(persons)
+
+  Person.find({})
+    .then(persons => {
+      response.json(persons)
+    })
 })
 
 // Get a person by ID
@@ -106,14 +116,25 @@ app.post('/api/persons', (request, response) => {
   }
 
   // Add the new person
-  const newPersonId = Math.floor(Math.random() * 10000) + 1
+  /*const newPersonId = Math.floor(Math.random() * 10000) + 1
   newPerson.id = newPersonId  
-  persons = persons.concat(newPerson)
+  persons = persons.concat(newPerson)*/
 
-  response.json(newPerson)
+  // Add the new person to database
+  const person = new Person({
+    name: newPerson.name,
+    number: newPerson.number
+  })
+
+  person.save()
+    .then(result => {
+      console.log('Person saved!')
+    })
+
+  //response.json(newPerson)
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
