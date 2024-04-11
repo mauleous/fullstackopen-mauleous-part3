@@ -31,7 +31,7 @@ app.use(morgan(morganConfig))
 // Database
 const Person = require('./models/person')
 
-// Data
+// Local data
 let persons = [
   { 
     "id": 1,
@@ -57,18 +57,33 @@ let persons = [
 
 // Get info
 app.get('/info', (request, response) => {
-  const infoMessage = `<p>Phonebook has info for ${persons.length} people</p>`
+
+  // With local data
+  /*const infoMessage = `<p>Phonebook has info for ${persons.length} people</p>`
 
   const now = new Date()
   const timeMessage = `<p>${now}</p>`
 
-  response.send(infoMessage + timeMessage)
+  response.send(infoMessage + timeMessage)*/
+
+  // With database
+  Person.find({})
+    .then(persons => {
+      const infoMessage = `<p>Phonebook has info for ${persons.length} people</p>`
+
+      const now = new Date()
+      const timeMessage = `<p>${now}</p>`
+
+      response.send(infoMessage + timeMessage)
+    })
 })
 
 // Get all persons
 app.get('/api/persons', (request, response) => {
+  // With local data
   //response.json(persons)
 
+  // With database
   Person.find({})
     .then(persons => {
       response.json(persons)
@@ -76,8 +91,9 @@ app.get('/api/persons', (request, response) => {
 })
 
 // Get a person by ID
-app.get('/api/persons/:id', (request, response) => {
-  const personId = Number(request.params.id)
+app.get('/api/persons/:id', (request, response, next) => {
+  // With local data
+  /*const personId = Number(request.params.id)
   const person = persons.find((person) => person.id === personId)
 
   if(person) {
@@ -85,15 +101,34 @@ app.get('/api/persons/:id', (request, response) => {
   }
   else {
     response.status(404).end()
-  }  
+  } */ 
+
+  // With database
+  Person.findById(request.params.id)
+    .then(person => {
+      if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
 // Delete a person by ID
-app.delete('/api/persons/:id', (request, response) => {
-  const personId = Number(request.params.id)
+app.delete('/api/persons/:id', (request, response, next) => {
+  // With local data
+  /*const personId = Number(request.params.id)
   persons = persons.filter(person => person.id !== personId)
 
-  response.status(204).end()
+  response.status(204).end()*/
+
+  // With database
+  Person.findByIdAndDelete(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
 // Add a person
@@ -108,19 +143,20 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  const isDuplicate = persons.some(person => person.name === newPerson.name)
+  // Duplicate is not allowed - local data
+  /*const isDuplicate = persons.some(person => person.name === newPerson.name)
   if(isDuplicate) {
     return response.status(400).json({
       error: 'Name must be unique'
     })
-  }
+  }*/
 
-  // Add the new person
+  // Add the new person - local data
   /*const newPersonId = Math.floor(Math.random() * 10000) + 1
   newPerson.id = newPersonId  
   persons = persons.concat(newPerson)*/
 
-  // Add the new person to database
+  // Add the new person - with database
   const person = new Person({
     name: newPerson.name,
     number: newPerson.number
@@ -133,6 +169,35 @@ app.post('/api/persons', (request, response) => {
 
   //response.json(newPerson)
 })
+
+// Update a person
+app.put('/api/persons/:id', (request, response, next) => {
+  const toBeUpdatedPerson = request.body
+
+  const person = {
+    name: toBeUpdatedPerson.name,
+    number: toBeUpdatedPerson.number,
+  }
+
+  Person.findByIdAndUpdate(request.params.id, person, {new: true})
+    .then(updatedPerson => {
+      response.json(updatedPerson)
+    })
+    .catch(error => next(error))
+})
+
+// Error handlers
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id'})
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
