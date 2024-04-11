@@ -117,6 +117,7 @@ app.get('/api/persons/:id', (request, response, next) => {
 
 // Delete a person by ID
 app.delete('/api/persons/:id', (request, response, next) => {
+
   // With local data
   /*const personId = Number(request.params.id)
   persons = persons.filter(person => person.id !== personId)
@@ -154,7 +155,9 @@ app.post('/api/persons', (request, response) => {
   // Add the new person - local data
   /*const newPersonId = Math.floor(Math.random() * 10000) + 1
   newPerson.id = newPersonId  
-  persons = persons.concat(newPerson)*/
+  persons = persons.concat(newPerson)
+  
+  response.json(newPerson)*/
 
   // Add the new person - with database
   const person = new Person({
@@ -165,9 +168,10 @@ app.post('/api/persons', (request, response) => {
   person.save()
     .then(result => {
       console.log('Person saved!')
+      response.json(result)
     })
 
-  //response.json(newPerson)
+
 })
 
 // Update a person
