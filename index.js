@@ -133,7 +133,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
 })
 
 // Add a person
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const newPerson = request.body
 
   // Validations
@@ -170,6 +170,7 @@ app.post('/api/persons', (request, response) => {
       console.log('Person saved!')
       response.json(result)
     })
+    .catch(error => next(error))
 
 
 })
@@ -183,7 +184,11 @@ app.put('/api/persons/:id', (request, response, next) => {
     number: toBeUpdatedPerson.number,
   }
 
-  Person.findByIdAndUpdate(request.params.id, person, {new: true})
+  Person.findByIdAndUpdate(
+    request.params.id, 
+    person, 
+    {new: true, runValidators: true, context: 'query'}
+  )
     .then(updatedPerson => {
       response.json(updatedPerson)
     })
@@ -196,6 +201,8 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id'})
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
   }
 
   next(error)
@@ -204,6 +211,7 @@ const errorHandler = (error, request, response, next) => {
 app.use(errorHandler)
 
 const PORT = process.env.PORT
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
