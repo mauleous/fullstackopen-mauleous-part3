@@ -40,7 +40,7 @@ else {
   Phonebook.find({}).then(result => {
     result.forEach(phonebook => {
       console.log(`${phonebook.name} ${phonebook.number}`)
-    });
+    })
     mongoose.connection.close()
   })
 }

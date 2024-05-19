@@ -26,7 +26,7 @@ const phonebookSchema = new mongoose.Schema({
     validate: {
       validator: (newNumber) => {
         const numbers = newNumber.split('-')
-        const numberOfDash = numbers.length - 1;
+        const numberOfDash = numbers.length - 1
 
         if (numberOfDash !== 1) {
           // There should only be 1 '-' char
@@ -38,7 +38,7 @@ const phonebookSchema = new mongoose.Schema({
           return false
         }
 
-        if (isNan(numbers[0])) {
+        if (isNan(numbers[0]) || isNan(numbers[1])) {
           // both sections of newNumber should be numbers
           return false
         }
